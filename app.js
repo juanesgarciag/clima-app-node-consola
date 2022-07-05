@@ -1,50 +1,64 @@
-import { inquirerMenu, pause, readInput } from "./helpers/inquire.js";
+import {
+  inquirerMenu,
+  listPlaces,
+  pause,
+  readInput,
+} from "./helpers/inquire.js";
 import { Searchs } from "./models/search.js";
 
 const main = async () => {
+  const search = new Searchs();
 
-    const search = new Searchs();
+  let opt = "";
 
-    let opt = '';
+  do {
+    opt = await inquirerMenu();
 
-    do{
-        opt = await inquirerMenu();
+    switch (opt) {
+      case 1:
+        //Mostra mensaje
+        const place = await readInput("Ciudad: ");
 
-        switch (opt) {
-            case 1:
-            //Mostra mensaje
-            const place = await readInput('Ciudad: '); 
+        //Buscar lugares
+        const places = await search.city(place);
 
-            //Buscar lugares
-            search.city(place);
+        //Seleccionar lugar
+        const id = await listPlaces(places);
+        if(id === '0') continue;
 
-            //Seleccionar lugar
+        const {name, lat, lng} = places.find(l => l.id === id);
 
-            //Clima
+        //Guardar en DB
+        search.pushHistory(name);
 
-            //Mostrar resultados
+        //Clima
+        const infoWeather = await search.weather(lat, lng);
 
-                console.log('\n Información de la ciudad '.green);
-                console.log('----------------------------\n'.green);
-                console.log('Ciudad: ', );
-                console.log('Lat: ', );
-                console.log('Lng: ', );
-                console.log('Temperatura: ', );
-                console.log('Mínima: ', );
-                console.log('Máxima: ', );
-                break;
-            case 2:
-                console.log('Aqui veremos el historial')
-                break;
-        
-            default:
-                break;
-        }
+        //Mostrar resultados
 
-        if(opt !== 0) await pause();
+        console.log("\n Información de la ciudad ".green);
+        console.log("----------------------------\n".green);
+        console.log("Ciudad:", name.green);
+        console.log("Lat:", lat);
+        console.log("Lng:", lng);
+        console.log("Temperatura:", `${infoWeather.temp} °`.yellow);
+        console.log("Mínima:", `${infoWeather.min} °`.yellow);
+        console.log("Máxima:", `${infoWeather.max} °`.yellow);
+        console.log("Como esta el clima:", `${infoWeather.desc}`.green);
+        break;
+      case 2:
+        search.capitalizationHistory.forEach( (place, i) => {
+            const idx = `${i + 1}.`.green;
+            console.log(`${idx} ${place}`);
+        })
+        break;
 
-    }while(opt!==0);
+      default:
+        break;
+    }
 
+    if (opt !== 0) await pause();
+  } while (opt !== 0);
 };
 
 main();
